@@ -47,28 +47,28 @@
 
                 <Label Content="Remote ID" Grid.Row="2" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0" Height="26" />
                 <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center">
-                    <TextBox x:Name="ID1" Width="50" Height="26" VerticalAlignment="Top" >AB</TextBox>
-                    <TextBox x:Name="ID2" Width="50" Height="26" VerticalAlignment="Top" >46</TextBox>
+                    <TextBox x:Name="ID1" Width="50" Height="26" Text="AB" VerticalAlignment="Top" PreviewTextInput="bytePreview_TextInput" TextChanged="byteBox_TextChanged" TextAlignment="Center" />
+                    <TextBox x:Name="ID2" Width="50" Height="26" Text="46" VerticalAlignment="Top" PreviewTextInput="bytePreview_TextInput" TextChanged="byteBox_TextChanged" TextAlignment="Center" />
                 </StackPanel>
 
                 <StackPanel  Grid.Row="4" >
                     <Label Content="Color" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0" Height="26" />
-                    <TextBox x:Name="colorBox" HorizontalAlignment="Center" Height="26" Width="50" VerticalAlignment="Top" Text="{Binding ElementName=colorSlider, Path=Value, UpdateSourceTrigger=PropertyChanged}"/>
+                    <TextBox x:Name="colorBox" HorizontalAlignment="Center" Height="26" Width="50" VerticalAlignment="Top" Text="00" TextAlignment="Center" PreviewTextInput="bytePreview_TextInput" TextChanged="byteBox_TextChanged"/>
                 </StackPanel>
-                <Slider x:Name="colorSlider" Grid.Row="5" Maximum="255" TickFrequency="1" IsSnapToTickEnabled="True" VerticalAlignment="Center" Margin="0" Value="0"/>
+                <Slider x:Name="colorSlider" Grid.Row="5" Maximum="255" TickFrequency="1" IsSnapToTickEnabled="True" VerticalAlignment="Center" Margin="0" Value="0" ValueChanged="colorSlider_ValueChanged"/>
 
                 <StackPanel  Grid.Row="6" >
-                    <Label Content="Light" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0" Height="26" />
-                    <TextBox x:Name="lightBox" HorizontalAlignment="Center" Height="26" Width="50" VerticalAlignment="Top" Text="{Binding ElementName=lightSlider, Path=Value, UpdateSourceTrigger=PropertyChanged}"/>
+                    <Label Content="Light %" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0" Height="26" />
+                    <TextBox x:Name="lightBox" HorizontalAlignment="Center" Height="26" Width="50" VerticalAlignment="Top" Text="{Binding ElementName=lightSlider, Path=Value, UpdateSourceTrigger=PropertyChanged}" TextAlignment="Center"/>
                 </StackPanel>
-                <Slider x:Name="lightSlider" Grid.Row="7" Maximum="100" TickFrequency="1" IsSnapToTickEnabled="True" VerticalAlignment="Center" Margin="0" Value="0"/>
+                <Slider x:Name="lightSlider" Grid.Row="7" Maximum="100" TickFrequency="1" IsSnapToTickEnabled="True" VerticalAlignment="Center" Margin="0" Value="100" ValueChanged="lightSlider_ValueChanged"/>
 
                 <Label Content="Counter" Grid.Row="8" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0" Height="26" />
-                <TextBox x:Name="counterBox" Grid.Row="9" Width="50" Height="26" VerticalAlignment="Top" >0</TextBox>
+                <TextBox x:Name="counterBox" Grid.Row="9" Width="50" Height="26" VerticalAlignment="Top" TextAlignment="Center" Text="0" />
 
                 <Label Grid.Row="10" HorizontalAlignment="Center">Hold button</Label>
                 <StackPanel Orientation="Horizontal" Grid.Row="11" HorizontalAlignment="Center">
-                    <RadioButton GroupName="holdButton" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,0,20,0">Yes</RadioButton>
+                    <RadioButton GroupName="holdButton" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,0,20,0" Checked="RadioButton_Checked" Unchecked="RadioButton_Unchecked">Yes</RadioButton>
                     <RadioButton GroupName="holdButton" IsChecked="True" HorizontalAlignment="Left" VerticalAlignment="Top">No</RadioButton>
                 </StackPanel>
                 
@@ -87,18 +87,18 @@
                 <Ellipse Stroke="Black" StrokeThickness="2" Margin="50,26,0,0" Width="260" Height="400" HorizontalAlignment="Left" VerticalAlignment="Top"/>
 
                 <StackPanel Orientation="Horizontal" Margin="125,55,0,0" VerticalAlignment="Top" HorizontalAlignment="Left">
-                    <Button x:Name="allOnButton" Content="All On" Width="50" Height="26" Margin="0,0,5,0" />
-                    <Button x:Name="allOffButton" Content="All Off" Width="50" Height="26" Margin="5,0,0,0" />
+                    <Button x:Name="allOnButton" Content="All On" Width="50" Height="26" Margin="0,0,5,0" Click="remoteButton_Click" />
+                    <Button x:Name="allOffButton" Content="All Off" Width="50" Height="26" Margin="5,0,0,0" Click="remoteButton_Click" />
                 </StackPanel>
 
-                <Button x:Name="changeColorButton" Content="Change color" Width="100" Height="100" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="125,90,0,0"/>
+                <Button x:Name="changeColorButton" Content="Change color" Width="100" Height="100" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="125,90,0,0" Click="remoteButton_Click"/>
 
-                <Button x:Name="changeLightButton" Content="Change light" Width="200" Height="50" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="80,200,0,0"/>
+                <Button x:Name="changeLightButton" Content="Change light" Width="200" Height="50" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="80,200,0,0" Click="remoteButton_Click" />
 
                 <StackPanel Orientation="Horizontal" Margin="75,260,0,0" VerticalAlignment="Top" HorizontalAlignment="Left">
-                    <Button x:Name="speedMinusButton" Content="Speed -" Height="26" Width="60" Margin="0,0,5,0" />
-                    <Button x:Name="discoModeButton" Content="Disco mode" Height="26" Width="70" Margin="5,0" />
-                    <Button x:Name="speedPlusButton" Content="Speed +" Height="26" Width="60" Margin="5,0,0,0" />
+                    <Button x:Name="speedMinusButton" Content="Speed -" Height="26" Width="60" Margin="0,0,5,0" Click="remoteButton_Click" />
+                    <Button x:Name="discoModeButton" Content="Disco mode" Height="26" Width="70" Margin="5,0" Click="remoteButton_Click" />
+                    <Button x:Name="speedPlusButton" Content="Speed +" Height="26" Width="60" Margin="5,0,0,0" Click="remoteButton_Click" />
                 </StackPanel>
 
                 <Grid HorizontalAlignment="Left" VerticalAlignment="Top" Width="130" Height="100" Margin="116,300,0,0">
@@ -113,17 +113,17 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
-                    <Button x:Name="ch1OnButton" Content="On 1" Height="40"/>
-                    <Button x:Name="ch1OffButton" Grid.Row="1" Content="Off 1" Height="40"/>
+                    <Button x:Name="ch1OnButton" Content="On 1" Height="40" Click="remoteButton_Click" />
+                    <Button x:Name="ch1OffButton" Grid.Row="1" Content="Off 1" Height="40" Click="remoteButton_Click" />
 
-                    <Button x:Name="ch2OnButton" Grid.Column="1" Content="On 2" Height="40"/>
-                    <Button x:Name="ch2OffButton" Grid.Column="1" Grid.Row="1" Content="Off 2" Height="40"/>
+                    <Button x:Name="ch2OnButton" Grid.Column="1" Content="On 2" Height="40" Click="remoteButton_Click" />
+                    <Button x:Name="ch2OffButton" Grid.Column="1" Grid.Row="1" Content="Off 2" Height="40" Click="remoteButton_Click" />
 
-                    <Button x:Name="ch3OnButton" Grid.Column="2" Content="On 3" Height="40"/>
-                    <Button x:Name="ch3OffButton" Grid.Column="2" Grid.Row="1" Content="Off 3" Height="40"/>
+                    <Button x:Name="ch3OnButton" Grid.Column="2" Content="On 3" Height="40" Click="remoteButton_Click" />
+                    <Button x:Name="ch3OffButton" Grid.Column="2" Grid.Row="1" Content="Off 3" Height="40" Click="remoteButton_Click" />
 
-                    <Button x:Name="ch4OnButton" Grid.Column="3" Content="On 4" Height="40"/>
-                    <Button x:Name="ch4OffButton" Grid.Column="3" Grid.Row="1" Content="Off 4" Height="40"/>
+                    <Button x:Name="ch4OnButton" Grid.Column="3" Content="On 4" Height="40" Click="remoteButton_Click" />
+                    <Button x:Name="ch4OffButton" Grid.Column="3" Grid.Row="1" Content="Off 4" Height="40" Click="remoteButton_Click" />
 
                 </Grid>
 
@@ -138,13 +138,13 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
                     
-                    <TextBox Grid.Column="0" Height="40" Text="B0" IsReadOnly="True" FontWeight="Bold" FontSize="18" TextAlignment="Center"/>
-                    <TextBox Grid.Column="1" Height="40" Text="AB" IsReadOnly="True" FontWeight="Bold" FontSize="18" TextAlignment="Center"/>
-                    <TextBox Grid.Column="2" Height="40" Text="46" IsReadOnly="True" FontWeight="Bold" FontSize="18" TextAlignment="Center"/>
-                    <TextBox Grid.Column="3" Height="40" Text="00" IsReadOnly="True" FontWeight="Bold" FontSize="18" TextAlignment="Center"/>
-                    <TextBox Grid.Column="4" Height="40" Text="00" IsReadOnly="True" FontWeight="Bold" FontSize="18" TextAlignment="Center"/>
-                    <TextBox Grid.Column="5" Height="40" Text="00" IsReadOnly="True" FontWeight="Bold" FontSize="18" TextAlignment="Center"/>
-                    <TextBox Grid.Column="6" Height="40" Text="00" IsReadOnly="True" FontWeight="Bold" FontSize="18" TextAlignment="Center"/>
+                    <TextBox x:Name="discoByteBox" Grid.Column="0" Height="40" Text="B0" IsReadOnly="True" FontWeight="Bold" FontSize="18" TextAlignment="Center"/>
+                    <TextBox x:Name="ID1ByteBox" Grid.Column="1" Height="40" Text="AB" IsReadOnly="True" FontWeight="Bold" FontSize="18" TextAlignment="Center"/>
+                    <TextBox x:Name="ID2ByteBox" Grid.Column="2" Height="40" Text="46" IsReadOnly="True" FontWeight="Bold" FontSize="18" TextAlignment="Center"/>
+                    <TextBox x:Name="colorByteBox" Grid.Column="3" Height="40" Text="00" IsReadOnly="True" FontWeight="Bold" FontSize="18" TextAlignment="Center"/>
+                    <TextBox x:Name="lightByteBox" Grid.Column="4" Height="40" Text="B9" IsReadOnly="True" FontWeight="Bold" FontSize="18" TextAlignment="Center"/>
+                    <TextBox x:Name="cmdByteBox" Grid.Column="5" Height="40" Text="00" IsReadOnly="True" FontWeight="Bold" FontSize="18" TextAlignment="Center"/>
+                    <TextBox x:Name="ctrByteBox" Grid.Column="6" Height="40" Text="00" IsReadOnly="True" FontWeight="Bold" FontSize="18" TextAlignment="Center"/>
 
                 </Grid>
 
@@ -161,12 +161,12 @@
 
                     <StackPanel>
                         <Label Content="Resends" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0" Height="26" />
-                        <TextBox x:Name="resendsBox" HorizontalAlignment="Center" Height="26" Width="50" VerticalAlignment="Top" Text="0"/>
+                        <TextBox x:Name="resendsBox" HorizontalAlignment="Center" Height="26" Width="50" VerticalAlignment="Top" Text="0" TextAlignment="Center"/>
                     </StackPanel>
 
                     <StackPanel Grid.Row="1">
                         <Label Content="Sequence length" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0" Height="26" />
-                        <TextBox x:Name="seqBox" HorizontalAlignment="Center" Height="26" Width="50" VerticalAlignment="Top" Text="16"/>
+                        <TextBox x:Name="seqBox" HorizontalAlignment="Center" Height="26" Width="50" VerticalAlignment="Top" Text="16" TextAlignment="Center"/>
                     </StackPanel>
 
                     <StackPanel Grid.Row="2" Orientation="Horizontal">
