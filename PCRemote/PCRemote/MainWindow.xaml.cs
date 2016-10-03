@@ -24,5 +24,10 @@ namespace PCRemote
         {
             InitializeComponent();
         }
+
+        private void discoSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+
+        }
     }
 }
