@@ -175,7 +175,7 @@
                         <TextBox x:Name="portBox" Text="2016" Height="26" Width="40" HorizontalAlignment="Left" VerticalAlignment="Top"/>
                     </StackPanel>
 
-                    <Button x:Name="connectButton" Grid.Row="4" Content="Connect" Height="26" Width="150"/>
+                    <Button x:Name="connectButton" Grid.Row="4" Content="Connect" Height="26" Width="150" Click="connectButton_Click"/>
 
                 </Grid>
 

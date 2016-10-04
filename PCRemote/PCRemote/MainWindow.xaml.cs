@@ -15,16 +15,26 @@ using System.Windows.Shapes;
 
 using System.Text.RegularExpressions;
 
+using Newtonsoft.Json;
+
 namespace PCRemote
 {
+
+    public class FrameStruct
+    {
+        public string[] frame;
+        public int resendsNumber;
+        public int sequenceLength;
+    }
+
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
     public partial class MainWindow : Window
     {
         private byte discoByte = 176;
-        private byte ID1Byte = 0;
-        private byte ID2Byte = 0;
+        private byte ID1Byte = 171;
+        private byte ID2Byte = 70;
         private byte colorByte = 0;
         private byte lightByte = 185;
         private byte cmdByte = 0;
@@ -35,6 +45,37 @@ namespace PCRemote
         public MainWindow()
         {
             InitializeComponent();
+        }
+
+        private string GetJSON()
+        {
+            try
+            {
+                string retVal = "";
+
+                string[] frame = new string[7];
+                frame[0] = System.Convert.ToString(this.discoByte, 16);
+                frame[1] = System.Convert.ToString(this.ID1Byte, 16);
+                frame[2] = System.Convert.ToString(this.ID2Byte, 16);
+                frame[3] = System.Convert.ToString(this.colorByte, 16);
+                frame[4] = System.Convert.ToString(this.lightByte, 16);
+                frame[5] = System.Convert.ToString(this.cmdByte, 16);
+                frame[6] = System.Convert.ToString(this.ctrByte, 16);
+
+                FrameStruct frameToJSON = new FrameStruct();
+                frameToJSON.frame = frame;
+                frameToJSON.resendsNumber = System.Convert.ToInt32(resendsBox.Text);
+                frameToJSON.sequenceLength = System.Convert.ToInt32(seqBox.Text);
+
+                retVal = JsonConvert.SerializeObject(frameToJSON);
+
+                return retVal;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+                return "";
+            }
         }
 
         private byte CalcLight(int lightInPerc)
@@ -251,6 +292,9 @@ namespace PCRemote
                     case "ch3OnButton":
                         this.cmdByte = 0x07;
                         break;
+
+
+
                     case "ch3OffButton":
                         this.cmdByte = 0x08;
                         break;
@@ -267,12 +311,35 @@ namespace PCRemote
                 this.cmdByte += holdButton;
                 string hexVal = System.Convert.ToString(this.cmdByte, 16).ToUpper();
                 cmdByteBox.Text = hexVal;
+
+                string data = this.GetJSON();
+                if (data != "")
+                {
+                    MessageBox.Show(data);
+                }
+
+                int seqLength = System.Convert.ToInt32(seqBox.Text);
+                seqLength = seqLength % 255;
+                this.ctrByte = System.Convert.ToByte(seqLength);
+                seqBox.Text = System.Convert.ToString(seqLength, 16).ToUpper();
             }
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message);
             }
            
+        }
+
+        private void connectButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
         }
     }
 }
