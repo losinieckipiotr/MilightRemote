@@ -1,0 +1,6 @@
+*.html
+*.layout
+*.depend
+obj/
+bin/
+core
