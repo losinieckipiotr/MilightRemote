@@ -64,7 +64,7 @@
                 <Slider x:Name="lightSlider" Grid.Row="7" Maximum="100" TickFrequency="1" IsSnapToTickEnabled="True" VerticalAlignment="Center" Margin="0" Value="100" ValueChanged="lightSlider_ValueChanged"/>
 
                 <Label Content="Counter" Grid.Row="8" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0" Height="26" />
-                <TextBox x:Name="counterBox" Grid.Row="9" Width="50" Height="26" VerticalAlignment="Top" TextAlignment="Center" Text="0" />
+                <TextBox x:Name="ctrBox" Grid.Row="9" Width="50" Height="26" VerticalAlignment="Top" TextAlignment="Center" Text="0" PreviewTextInput="bytePreview_TextInput" TextChanged="byteBox_TextChanged"/>
 
                 <Label Grid.Row="10" HorizontalAlignment="Center">Hold button</Label>
                 <StackPanel Orientation="Horizontal" Grid.Row="11" HorizontalAlignment="Center">
@@ -161,12 +161,12 @@
 
                     <StackPanel>
                         <Label Content="Resends" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0" Height="26" />
-                        <TextBox x:Name="resendsBox" HorizontalAlignment="Center" Height="26" Width="50" VerticalAlignment="Top" Text="0" TextAlignment="Center"/>
+                        <TextBox x:Name="resendsBox" HorizontalAlignment="Center" Height="26" Width="50" VerticalAlignment="Top" Text="0" TextAlignment="Center" PreviewTextInput="numberBox_PreviewTextInput" TextChanged="numberBox_TextChanged" />
                     </StackPanel>
 
                     <StackPanel Grid.Row="1">
                         <Label Content="Sequence length" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0" Height="26" />
-                        <TextBox x:Name="seqBox" HorizontalAlignment="Center" Height="26" Width="50" VerticalAlignment="Top" Text="16" TextAlignment="Center"/>
+                        <TextBox x:Name="seqBox" HorizontalAlignment="Center" Height="26" Width="50" VerticalAlignment="Top" Text="16" TextAlignment="Center" PreviewTextInput="numberBox_PreviewTextInput" TextChanged="numberBox_TextChanged" />
                     </StackPanel>
 
                     <StackPanel Grid.Row="2" Orientation="Horizontal">

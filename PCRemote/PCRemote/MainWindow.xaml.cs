@@ -14,17 +14,25 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 
 using System.Text.RegularExpressions;
+using System.Net;
+using System.Net.Sockets;
+using System.Threading;
 
 using Newtonsoft.Json;
 
 namespace PCRemote
 {
 
-    public class FrameStruct
+    public class FrameJSON
     {
         public string[] frame;
         public int resendsNumber;
         public int sequenceLength;
+
+        override public string ToString()
+        {
+            return JsonConvert.SerializeObject(this);
+        }
     }
 
     /// <summary>
@@ -42,17 +50,62 @@ namespace PCRemote
 
         private byte holdButton = 0;
 
+        private Socket socket = null;
+
+        private bool connected = false;
+
         public MainWindow()
         {
             InitializeComponent();
+        }
+
+        private Task TryConnect(IPAddress address, int port)
+        {
+            Task t = new Task(() =>
+            {
+                try
+                {
+                    this.socket = new Socket(
+                          AddressFamily.InterNetwork,
+                          SocketType.Stream,
+                          ProtocolType.Tcp);
+
+                    this.socket.Connect(address, port);
+                    connected = true;
+                }
+                catch (Exception ex)
+                {
+                    this.socket = null;
+                    connected = false;
+                    MessageBox.Show("Nie udalo się połączyć: " + ex.Message);
+                }
+            });
+            t.Start();
+            return t;
+        }
+
+        private Task SendFrame(string frameToSend)
+        {
+            Task t = new Task(() =>
+            {
+                try
+                {
+                    byte[] buffer = ASCIIEncoding.ASCII.GetBytes(frameToSend);
+                    this.socket.Send(buffer);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Nie udalo się wysłać ramki: " + ex.Message);
+                }
+            });
+            t.Start();
+            return t;
         }
 
         private string GetJSON()
         {
             try
             {
-                string retVal = "";
-
                 string[] frame = new string[7];
                 frame[0] = System.Convert.ToString(this.discoByte, 16);
                 frame[1] = System.Convert.ToString(this.ID1Byte, 16);
@@ -62,14 +115,18 @@ namespace PCRemote
                 frame[5] = System.Convert.ToString(this.cmdByte, 16);
                 frame[6] = System.Convert.ToString(this.ctrByte, 16);
 
-                FrameStruct frameToJSON = new FrameStruct();
-                frameToJSON.frame = frame;
-                frameToJSON.resendsNumber = System.Convert.ToInt32(resendsBox.Text);
-                frameToJSON.sequenceLength = System.Convert.ToInt32(seqBox.Text);
+                FrameJSON frameToSend = new FrameJSON();
+                frameToSend.frame = frame;
+                if (resendsBox.Text == "")
+                    frameToSend.resendsNumber = 0;
+                else
+                    frameToSend.resendsNumber = System.Convert.ToInt32(resendsBox.Text);
+                if (seqBox.Text == "")
+                    frameToSend.sequenceLength = 0;
+                else
+                    frameToSend.sequenceLength = System.Convert.ToInt32(seqBox.Text);
 
-                retVal = JsonConvert.SerializeObject(frameToJSON);
-
-                return retVal;
+                return frameToSend.ToString();
             }
             catch (Exception ex)
             {
@@ -178,6 +235,14 @@ namespace PCRemote
                         colorSlider.Value = typedByte;
                     }
                 }
+                else if(txtBox == ctrBox)
+                {
+                    if(ctrByteBox != null)
+                    {
+                        ctrByteBox.Text = valueToConvert;
+                        this.ctrByte = typedByte;
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -248,7 +313,7 @@ namespace PCRemote
             }
         }
 
-        private void remoteButton_Click(object sender, RoutedEventArgs e)
+        private async void remoteButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
@@ -292,9 +357,6 @@ namespace PCRemote
                     case "ch3OnButton":
                         this.cmdByte = 0x07;
                         break;
-
-
-
                     case "ch3OffButton":
                         this.cmdByte = 0x08;
                         break;
@@ -312,16 +374,20 @@ namespace PCRemote
                 string hexVal = System.Convert.ToString(this.cmdByte, 16).ToUpper();
                 cmdByteBox.Text = hexVal;
 
-                string data = this.GetJSON();
-                if (data != "")
+                string frame = this.GetJSON();
+                if (frame != "")
                 {
-                    MessageBox.Show(data);
+                    //MessageBox.Show(frame);
+                    if(connected)
+                    {
+                        await SendFrame(frame);
+                    }
                 }
 
                 int seqLength = System.Convert.ToInt32(seqBox.Text);
                 seqLength = seqLength % 255;
-                this.ctrByte = System.Convert.ToByte(seqLength);
-                seqBox.Text = System.Convert.ToString(seqLength, 16).ToUpper();
+                this.ctrByte += System.Convert.ToByte(seqLength);
+                ctrByteBox.Text = ctrBox.Text = System.Convert.ToString(this.ctrByte, 16).ToUpper();
             }
             catch (Exception ex)
             {
@@ -330,11 +396,72 @@ namespace PCRemote
            
         }
 
-        private void connectButton_Click(object sender, RoutedEventArgs e)
+        private void numberBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
         {
             try
             {
-                
+                Regex regex = new Regex("[^0-9]");
+                bool ok = regex.IsMatch(e.Text);
+                TextBox box = (TextBox)sender;
+                if (box.Text.Length > 4)
+                    ok = true;
+                e.Handled = ok;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        private void numberBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            try
+            {
+                TextBox txtBox = (TextBox)(sender);
+                string txt = txtBox.Text;
+                if(txt == "")
+                    return;
+                int val = System.Convert.ToInt32(txt);
+                if (val > 1000)
+                {
+                    txtBox.Text = "1000";
+                    txtBox.CaretIndex = 4;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        private async void connectButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (!connected)
+                {
+                    string IPString = ipBox.Text;
+                    IPAddress address = null;
+                    if (!IPAddress.TryParse(IPString, out address))
+                        return;
+
+                    Int16 port = 2016;
+                    if (!Int16.TryParse(portBox.Text, out port))
+                        return;
+
+                    await TryConnect(address, port);
+                    if (connected)
+                    {
+                        connectButton.Content = "Disconnect";
+                    }
+                }
+                else
+                {
+                    socket.Close();
+                    socket = null;
+                    connected = false;
+                    connectButton.Content = "Connect";
+                }
             }
             catch (Exception ex)
             {
