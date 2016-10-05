@@ -2,19 +2,18 @@
 #define TCP_SERVER_H
 
 #include <cstdint>
-#include <functional>
-#include <string>
 #include <array>
 #include <thread>
-//#include <queue>
 
 #include <boost/asio.hpp>
+
+#include "ReciveHandler.h"
 
 class TcpServer
 {
 public:
 	TcpServer(const std::uint16_t port,
-              std::function<void(const std::string&&)> frameHandler);
+            ReciveHandler& handler);
 	~TcpServer();
 
 	void Start();
@@ -24,8 +23,7 @@ private:
     void Accept();
     void Recive();
 
-   //void HandleFrame(const std::string& frame);
-    std::function<void(const std::string&&)> frameHandler_;
+    ReciveHandler& handler_;
 
     boost::asio::io_service service_;
     boost::asio::ip::tcp::acceptor acceptor_;
@@ -33,10 +31,8 @@ private:
 
     std::thread serverTh_;
 
-    enum { buff_size = 1024 };
+    enum { buff_size = 1024*1024 };
     std::array<char, buff_size> data_;
-    std::string buffer_;
-    //std::queue<char> fifo_;
 };
 
 #endif // !TCP_SERVER_h

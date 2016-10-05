@@ -13,6 +13,7 @@
 				<Option compiler="arm-elf-gcc" />
 				<Compiler>
 					<Add option="-g" />
+					<Add directory="src/" />
 				</Compiler>
 			</Target>
 			<Target title="Release">
@@ -22,6 +23,7 @@
 				<Option compiler="arm-elf-gcc" />
 				<Compiler>
 					<Add option="-O2" />
+					<Add directory="src/" />
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
@@ -31,7 +33,18 @@
 		<Compiler>
 			<Add option="-Wall" />
 		</Compiler>
-		<Unit filename="main.cpp" />
+		<Unit filename="src/ReciveHandler.cpp" />
+		<Unit filename="src/ReciveHandler.h" />
+		<Unit filename="src/TcpServer.cpp" />
+		<Unit filename="src/TcpServer.h" />
+		<Unit filename="src/main.cpp" />
+		<Unit filename="src/milight/AbstractPL1167.h" />
+		<Unit filename="src/milight/MiLightPilot.cpp" />
+		<Unit filename="src/milight/MiLightPilot.h" />
+		<Unit filename="src/milight/MiLightRadio.cpp" />
+		<Unit filename="src/milight/MiLightRadio.h" />
+		<Unit filename="src/milight/PL1167_nRF24.cpp" />
+		<Unit filename="src/milight/PL1167_nRF24.h" />
 		<Extensions>
 			<code_completion />
 			<debugger />

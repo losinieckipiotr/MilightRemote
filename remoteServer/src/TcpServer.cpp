@@ -1,15 +1,14 @@
-#include "TcpServer.h"
 #include <iostream>
-#include <exception>
-#include <future>
+
+#include "TcpServer.h"
 
 using namespace std;
 using namespace boost::asio;
 using namespace boost::asio::ip;
 
 TcpServer::TcpServer(const uint16_t port,
-                     function<void(const string&&)> frameHandler) :
-    frameHandler_(frameHandler),
+                     ReciveHandler& handler) :
+    handler_(handler),
     service_(),
     acceptor_(  service_,
                 tcp::endpoint(tcp::v4(), port),
@@ -52,9 +51,6 @@ void TcpServer::Accept()
             tcp::no_delay option(true);
             socket_.set_option(option);
 
-            buffer_.clear();
-            buffer_.reserve(buff_size);
-
             Recive();
         }
         else
@@ -74,37 +70,7 @@ void TcpServer::Recive()
         {
             if (!ec)
             {
-                //cout << "Recived: " << length << "bytes" << endl;
-
-                //TO DO: json queue
-
-                buffer_.append(data_.cbegin(), length);
-                auto jsonStart = buffer_.find_first_of('{');
-                auto jsonEnd = buffer_.find_first_of('}', jsonStart);
-                if(jsonStart == string::npos)
-                {
-                    cout << "Begin of JSON has not been found" << endl;
-                    buffer_.clear();
-                }
-                else if(jsonEnd == string::npos)
-                {
-                    cout << "End of JSON has not been found" << endl;
-                }
-                else
-                {
-                    string json = buffer_.substr(jsonStart, jsonEnd-jsonStart + 1);
-                    buffer_ = buffer_.substr(jsonEnd + 1);
-                    if(!buffer_.empty())
-                    {
-                        cout << "Buffer left:" << endl;
-                        cout << buffer_ << endl;
-                    }
-                    async(
-                    launch::async,
-                    frameHandler_,
-                    move(json));
-                }
-
+                handler_.Handle(move(string(data_.cbegin(), length)));
                 Recive();
             }
             else
