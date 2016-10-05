@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:PCRemote"
         mc:Ignorable="d"
-        Title="PCRemote" Height="600" Width="800">
+        Title="PCRemote" Height="600" Width="800" ResizeMode="CanMinimize">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="20"/>
@@ -68,7 +68,7 @@
 
                 <Label Grid.Row="10" HorizontalAlignment="Center">Hold button</Label>
                 <StackPanel Orientation="Horizontal" Grid.Row="11" HorizontalAlignment="Center">
-                    <RadioButton GroupName="holdButton" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,0,20,0" Checked="RadioButton_Checked" Unchecked="RadioButton_Unchecked">Yes</RadioButton>
+                    <RadioButton GroupName="holdButton" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,0,20,0" Checked="holdButton_Checked" Unchecked="holdButton__Unchecked">Yes</RadioButton>
                     <RadioButton GroupName="holdButton" IsChecked="True" HorizontalAlignment="Left" VerticalAlignment="Top">No</RadioButton>
                 </StackPanel>
                 
@@ -91,7 +91,7 @@
                     <Button x:Name="allOffButton" Content="All Off" Width="50" Height="26" Margin="5,0,0,0" Click="remoteButton_Click" />
                 </StackPanel>
 
-                <Button x:Name="changeColorButton" Content="Change color" Width="100" Height="100" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="125,90,0,0" Click="remoteButton_Click"/>
+                <Button x:Name="changeColorButton" Content="Change color" Width="100" Height="100" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="130,90,0,0" Click="remoteButton_Click"/>
 
                 <Button x:Name="changeLightButton" Content="Change light" Width="200" Height="50" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="80,200,0,0" Click="remoteButton_Click" />
 
@@ -153,29 +153,39 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
+                        <RowDefinition Height="30"/>
+                        <RowDefinition Height="30"/>
                         <RowDefinition Height="70"/>
                         <RowDefinition Height="70"/>
-                        <RowDefinition Height="35"/>
+                        <RowDefinition Height="70"/>
                         <RowDefinition Height="35"/>
                     </Grid.RowDefinitions>
 
-                    <StackPanel>
-                        <Label Content="Resends" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0" Height="26" />
-                        <TextBox x:Name="resendsBox" HorizontalAlignment="Center" Height="26" Width="50" VerticalAlignment="Top" Text="0" TextAlignment="Center" PreviewTextInput="numberBox_PreviewTextInput" TextChanged="numberBox_TextChanged" />
+                    <Label Grid.Row="0" HorizontalAlignment="Center">Continuous send</Label>
+                    <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center">
+                        <RadioButton GroupName="continuousSend" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,0,20,0" Checked="continuousSend_Checked" Unchecked="continuousSend__Unchecked">Yes</RadioButton>
+                        <RadioButton GroupName="continuousSend" IsChecked="True" HorizontalAlignment="Left" VerticalAlignment="Top">No</RadioButton>
                     </StackPanel>
 
-                    <StackPanel Grid.Row="1">
+                    <StackPanel Grid.Row="2">
+                        <Label Content="Resends" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0" Height="26" />
+                        <TextBox x:Name="resendsBox" HorizontalAlignment="Center" Height="26" Width="50" VerticalAlignment="Top" Text="1" TextAlignment="Center" PreviewTextInput="numberBox_PreviewTextInput" TextChanged="numberBox_TextChanged" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="3">
                         <Label Content="Sequence length" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0" Height="26" />
                         <TextBox x:Name="seqBox" HorizontalAlignment="Center" Height="26" Width="50" VerticalAlignment="Top" Text="16" TextAlignment="Center" PreviewTextInput="numberBox_PreviewTextInput" TextChanged="numberBox_TextChanged" />
                     </StackPanel>
 
-                    <StackPanel Grid.Row="2" Orientation="Horizontal">
-                        <Label Content="Address" VerticalAlignment="Top" HorizontalAlignment="Left"/>
-                        <TextBox x:Name="ipBox" Text="192.168.1.10" HorizontalAlignment="Left" VerticalAlignment="Top" Width="80" Height="26"/>
-                        <TextBox x:Name="portBox" Text="2016" Height="26" Width="40" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+                    <StackPanel Grid.Row="4" Orientation="Vertical">
+                        <Label Content="Address" VerticalAlignment="Top" HorizontalAlignment="Center"/>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBox x:Name="ipBox" Text="192.168.1.10" HorizontalAlignment="Left" VerticalAlignment="Top" Width="100" Height="26" PreviewTextInput="ipBox_PreviewTextInput" Margin="20,0,0,0"/>
+                            <TextBox x:Name="portBox" Text="2016" Height="26" Width="40" HorizontalAlignment="Left" VerticalAlignment="Top" PreviewTextInput="portBox_PreviewTextInput"/>
+                        </StackPanel>
                     </StackPanel>
 
-                    <Button x:Name="connectButton" Grid.Row="4" Content="Connect" Height="26" Width="150" Click="connectButton_Click"/>
+                    <Button x:Name="connectButton" Grid.Row="5" Content="Connect" Height="26" Width="150" Click="connectButton_Click"/>
 
                 </Grid>
 

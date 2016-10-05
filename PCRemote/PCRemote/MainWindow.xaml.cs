@@ -40,15 +40,16 @@ namespace PCRemote
     /// </summary>
     public partial class MainWindow : Window
     {
-        private byte discoByte = 176;
-        private byte ID1Byte = 171;
-        private byte ID2Byte = 70;
-        private byte colorByte = 0;
-        private byte lightByte = 185;
-        private byte cmdByte = 0;
-        private byte ctrByte = 0;
+        private string discoByte = "B0";
+        private string ID1Byte = "AB";
+        private string ID2Byte = "46";
+        private string colorByte = "00";
+        private string lightByte = "B9";
+        private string cmdByte = "00";
+        private string ctrByte = "00";
 
-        private byte holdButton = 0;
+        private bool holdButton = false;
+        private bool continuousSend = false;
 
         private Socket socket = null;
 
@@ -59,6 +60,7 @@ namespace PCRemote
             InitializeComponent();
         }
 
+        #region backend functions
         private Task TryConnect(IPAddress address, int port)
         {
             Task t = new Task(() =>
@@ -107,13 +109,13 @@ namespace PCRemote
             try
             {
                 string[] frame = new string[7];
-                frame[0] = System.Convert.ToString(this.discoByte, 16);
-                frame[1] = System.Convert.ToString(this.ID1Byte, 16);
-                frame[2] = System.Convert.ToString(this.ID2Byte, 16);
-                frame[3] = System.Convert.ToString(this.colorByte, 16);
-                frame[4] = System.Convert.ToString(this.lightByte, 16);
-                frame[5] = System.Convert.ToString(this.cmdByte, 16);
-                frame[6] = System.Convert.ToString(this.ctrByte, 16);
+                frame[0] = this.discoByte;
+                frame[1] = this.ID1Byte;
+                frame[2] = this.ID2Byte;
+                frame[3] = this.colorByte;
+                frame[4] = this.lightByte;
+                frame[5] = this.cmdByte;
+                frame[6] = this.ctrByte;
 
                 FrameJSON frameToSend = new FrameJSON();
                 frameToSend.frame = frame;
@@ -149,17 +151,47 @@ namespace PCRemote
             return (byte)v;
         }
 
+        private void UpdateFrameCounter()
+        {
+            int seqLength = System.Convert.ToInt32(seqBox.Text);
+            int ctr = System.Convert.ToInt32(this.ctrByte, 16) + seqLength;
+            ctr = ctr % 256;
+            string ctrStr = System.Convert.ToString(ctr, 16).ToUpper();
+            if (ctrStr.Length == 1)
+                ctrStr = "0" + ctrStr;
+            this.ctrByte = ctrByteBox.Text = ctrBox.Text = ctrStr;
+        }
+
+        private async void SendFrameIfNeeded(bool remoteClick = false)
+        {
+            if (connected)
+            {
+                if (remoteClick || continuousSend)
+                {
+                    string frame = this.GetJSON();
+                    if (frame != "")
+                    {
+                        //MessageBox.Show(frame);
+
+                        await SendFrame(frame);
+                        UpdateFrameCounter();
+                    }
+                }
+            }
+        }
+
+        #endregion
+
+        #region remoteControls
         private void discoSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
             try
             {
                 int sliderVal = System.Convert.ToInt32(e.NewValue);
-                if(sliderVal >= 0 && sliderVal <= 9)
-                {
-                    string discoByte = "B";
-                    discoByte += sliderVal.ToString();
-                    discoByteBox.Text = discoByte;
-                }
+                this.discoByte = "B" + sliderVal.ToString();
+                discoByteBox.Text = this.discoByte;
+
+                SendFrameIfNeeded();
             }
             catch (Exception ex)
             {
@@ -192,55 +224,44 @@ namespace PCRemote
                 if (txtBox == null)
                     return;
 
-                byte typedByte = 0;
-
-                string valueToConvert = txtBox.Text;
+                string typedByte = txtBox.Text;
                 
-                if (valueToConvert.Length == 1)
+                if (typedByte.Length == 1)
                 {
-                    valueToConvert = "0" + valueToConvert;
+                    typedByte = "0" + typedByte;
                 }
-                if(valueToConvert.Length == 2)
+                else if(typedByte == "")
                 {
-                    typedByte = System.Convert.ToByte(valueToConvert, 16);
-                }
-                else//empty string
-                {
-                    valueToConvert = "00";
-                    typedByte = 0;
+                    typedByte = "00";
                 }
 
                 if(txtBox == ID1)
                 {
                     if (ID1ByteBox != null)
                     {
-                        ID1ByteBox.Text = valueToConvert;
-                        this.ID1Byte = typedByte;
+                        this.ID1Byte = ID1ByteBox.Text = typedByte;
                     }
                 }
                 else if(txtBox == ID2)
                 {
                     if (ID2ByteBox != null)
                     {
-                        ID2ByteBox.Text = valueToConvert;
-                        this.ID2Byte = typedByte;
+                        this.ID2Byte = ID2ByteBox.Text = typedByte;
                     }
                 }
                 else if(txtBox == colorBox)
                 {
                     if(colorByteBox != null)
                     {
-                        colorByteBox.Text = valueToConvert;
-                        this.colorByte = typedByte;
-                        colorSlider.Value = typedByte;
+                        this.colorByte = colorByteBox.Text = typedByte;
+                        colorSlider.Value = System.Convert.ToInt32(typedByte, 16);
                     }
                 }
                 else if(txtBox == ctrBox)
                 {
                     if(ctrByteBox != null)
                     {
-                        ctrByteBox.Text = valueToConvert;
-                        this.ctrByte = typedByte;
+                        this.ctrByte = ctrByteBox.Text = typedByte;
                     }
                 }
             }
@@ -256,8 +277,9 @@ namespace PCRemote
             {
                 int val = System.Convert.ToInt32(e.NewValue);
                 string hexVal = System.Convert.ToString(val, 16).ToUpper();
-                colorBox.Text = hexVal;
-                this.discoByte = (byte)val;
+                this.colorByte = colorBox.Text = hexVal;
+
+                SendFrameIfNeeded();
             }
             catch (Exception ex)
             {
@@ -270,10 +292,12 @@ namespace PCRemote
             try
             {
                 int val = System.Convert.ToInt32(e.NewValue);
-                this.lightByte = CalcLight(val);
-                string hexVal = System.Convert.ToString(this.lightByte, 16).ToUpper();
+                val = CalcLight(val);
+                string hexVal = System.Convert.ToString(val, 16).ToUpper();
                 if(lightByteBox != null)
-                    lightByteBox.Text = hexVal;
+                    this.lightByte = lightByteBox.Text = hexVal;
+
+                SendFrameIfNeeded();
             }
             catch (Exception ex)
             {
@@ -281,15 +305,16 @@ namespace PCRemote
             }
         }
 
-        private void RadioButton_Checked(object sender, RoutedEventArgs e)
+        private void holdButton_Checked(object sender, RoutedEventArgs e)
         {
             try
             {
-                holdButton = 0x10;
-                this.cmdByte += 0x10;
-                string hexVal = System.Convert.ToString(this.cmdByte, 16).ToUpper();
+                holdButton = true;
+                this.cmdByte = "1" + this.cmdByte.Substring(1, 1);
                 if (cmdByteBox != null)
-                    cmdByteBox.Text = hexVal;
+                    cmdByteBox.Text = this.cmdByte;
+
+                SendFrameIfNeeded();
             }
             catch (Exception ex)
             {
@@ -297,15 +322,16 @@ namespace PCRemote
             }
         }
 
-        private void RadioButton_Unchecked(object sender, RoutedEventArgs e)
+        private void holdButton__Unchecked(object sender, RoutedEventArgs e)
         {
             try
             {
-                holdButton = 0x00;
-                this.cmdByte -= 0x10;
-                string hexVal = System.Convert.ToString(this.cmdByte, 16).ToUpper();
+                holdButton = false;
+                this.cmdByte = "0" + this.cmdByte.Substring(1, 1);
                 if (cmdByteBox != null)
-                    cmdByteBox.Text = hexVal;
+                    cmdByteBox.Text = this.cmdByte;
+
+                SendFrameIfNeeded();
             }
             catch (Exception ex)
             {
@@ -313,7 +339,7 @@ namespace PCRemote
             }
         }
 
-        private async void remoteButton_Click(object sender, RoutedEventArgs e)
+        private void remoteButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
@@ -322,78 +348,90 @@ namespace PCRemote
                 switch (buttSender.Name)
                 {
                     case "allOnButton":
-                        this.cmdByte = 0x01;
+                        this.cmdByte = "01";
                         break;
                     case "allOffButton":
-                        this.cmdByte = 0x02;
+                        this.cmdByte = "02";
                         break;
                     case "changeColorButton":
-                        this.cmdByte = 0x0F;
+                        this.cmdByte = "0F";
                         break;
                     case "changeLightButton":
-                        this.cmdByte = 0x0E;
+                        this.cmdByte = "0E";
                         break;
                     case "speedMinusButton":
-                        this.cmdByte = 0x0C;
+                        this.cmdByte = "0C";
                         break;
                     case "discoModeButton":
-                        this.cmdByte = 0x0D;
+                        this.cmdByte = "0D";
                         break;
                     case "speedPlusButton":
-                        this.cmdByte = 0x0B;
+                        this.cmdByte = "0B";
                         break;
                     case "ch1OnButton":
-                        this.cmdByte = 0x03;
+                        this.cmdByte = "03";
                         break;
                     case "ch1OffButton":
-                        this.cmdByte = 0x04;
+                        this.cmdByte = "04";
                         break;
                     case "ch2OnButton":
-                        this.cmdByte = 0x05;
+                        this.cmdByte = "05";
                         break;
                     case "ch2OffButton":
-                        this.cmdByte = 0x06;
+                        this.cmdByte = "06";
                         break;
                     case "ch3OnButton":
-                        this.cmdByte = 0x07;
+                        this.cmdByte = "07";
                         break;
                     case "ch3OffButton":
-                        this.cmdByte = 0x08;
+                        this.cmdByte = "08";
                         break;
                     case "ch4OnButton":
-                        this.cmdByte = 0x09;
+                        this.cmdByte = "09";
                         break;
                     case "ch4OffButton":
-                        this.cmdByte = 0x10;
+                        this.cmdByte = "0A";
                         break;
                     default:
                         MessageBox.Show("Unknown button");
                         return;
                 }
-                this.cmdByte += holdButton;
-                string hexVal = System.Convert.ToString(this.cmdByte, 16).ToUpper();
-                cmdByteBox.Text = hexVal;
+                if(holdButton)
+                    this.cmdByte = "1" + this.cmdByte.Substring(1, 1);
+                cmdByteBox.Text = this.cmdByte;
 
-                string frame = this.GetJSON();
-                if (frame != "")
-                {
-                    //MessageBox.Show(frame);
-                    if(connected)
-                    {
-                        await SendFrame(frame);
-                    }
-                }
-
-                int seqLength = System.Convert.ToInt32(seqBox.Text);
-                seqLength = seqLength % 255;
-                this.ctrByte += System.Convert.ToByte(seqLength);
-                ctrByteBox.Text = ctrBox.Text = System.Convert.ToString(this.ctrByte, 16).ToUpper();
+                SendFrameIfNeeded(true);
             }
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message);
             }
-           
+        }
+        #endregion
+
+        #region appControl
+        private void continuousSend_Checked(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                continuousSend = true;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        private void continuousSend__Unchecked(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                continuousSend = false;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
         }
 
         private void numberBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
@@ -419,14 +457,62 @@ namespace PCRemote
             {
                 TextBox txtBox = (TextBox)(sender);
                 string txt = txtBox.Text;
-                if(txt == "")
+
+                //seqBox
+                if (txtBox == seqBox)
+                {
+                    if (txt == "" || txt == "0")
+                    {
+                        txtBox.Text = "1";
+                        return;
+                    }
+                }
+                //resendsBox
+                else if(txt == "")
+                {
                     return;
+                }
+
                 int val = System.Convert.ToInt32(txt);
                 if (val > 1000)
                 {
                     txtBox.Text = "1000";
                     txtBox.CaretIndex = 4;
                 }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        private void ipBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            try
+            {
+                Regex regex = new Regex("[^0-9.]");
+                bool ok = regex.IsMatch(e.Text);
+                TextBox box = (TextBox)sender;
+                if (box.Text.Length == 15)
+                    ok = true;
+                e.Handled = ok;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        private void portBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            try
+            {
+                Regex regex = new Regex("[^0-9]");
+                bool ok = regex.IsMatch(e.Text);
+                TextBox box = (TextBox)sender;
+                if (box.Text.Length == 4)
+                    ok = true;
+                e.Handled = ok;
             }
             catch (Exception ex)
             {
@@ -468,5 +554,6 @@ namespace PCRemote
                 MessageBox.Show(ex.Message);
             }
         }
+        #endregion
     }
 }
