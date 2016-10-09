@@ -22,6 +22,14 @@ using Newtonsoft.Json;
 
 namespace PCRemote
 {
+    enum CHANNELS
+    {
+        ALL = 0,
+        CH1 = 1,
+        CH2 = 2,
+        CH3 = 3,
+        CH4 = 4
+    }
 
     public class FrameJSON
     {
@@ -44,10 +52,11 @@ namespace PCRemote
         private string ID1Byte = "AB";
         private string ID2Byte = "46";
         private string colorByte = "00";
-        private string lightByte = "B9";
+        private string lightByte = "B8";
         private string cmdByte = "00";
         private string ctrByte = "00";
 
+        CHANNELS channel = CHANNELS.ALL;
         private bool holdButton = false;
         private bool continuousSend = false;
 
@@ -137,18 +146,18 @@ namespace PCRemote
             }
         }
 
-        private byte CalcLight(int lightInPerc)
+        private int CalcLight(int lightInPerc, CHANNELS ch = CHANNELS.ALL)
         {
             if (lightInPerc >= 100)
-                return (byte)(0xB9);
+                return 0xB8 + (int)ch;
             else if (lightInPerc == 0)
-                return (byte)(0x81);
+                return 0x80 + (int)ch;
 
-            int t = (int)(Math.Round(lightInPerc / 4.0f));
-            int v = 0xFF - 0x7E - t * 8;
-            if (v < 0)
-                v = 0xFF + 0x82 - t * 8;
-            return (byte)v;
+            int temp = (int)(Math.Round(lightInPerc / 4.0f));
+            int val = 0xFF - 0x7F - temp * 8;
+            if (val < 0)
+                val = 0xFF + 0x81 - temp * 8;
+            return val + (int)ch;
         }
 
         private void UpdateFrameCounter()
@@ -160,6 +169,24 @@ namespace PCRemote
             if (ctrStr.Length == 1)
                 ctrStr = "0" + ctrStr;
             this.ctrByte = ctrByteBox.Text = ctrBox.Text = ctrStr;
+        }
+
+        private void UpdateCmdByteBox(string newCmd)
+        {
+            this.cmdByte = newCmd;
+            if (holdButton)
+                this.cmdByte = "1" + this.cmdByte.Substring(1, 1);
+            if(cmdByteBox != null)
+                cmdByteBox.Text = this.cmdByte;
+        }
+
+        private void UpdateLightVal()
+        {
+            int val = System.Convert.ToInt32(lightSlider.Value);
+            val = CalcLight(val, this.channel);
+            string hexVal = System.Convert.ToString(val, 16).ToUpper();
+            if (lightByteBox != null)
+                this.lightByte = lightByteBox.Text = hexVal;
         }
 
         private async void SendFrameIfNeeded(bool remoteClick = false)
@@ -190,6 +217,8 @@ namespace PCRemote
                 int sliderVal = System.Convert.ToInt32(e.NewValue);
                 this.discoByte = "B" + sliderVal.ToString();
                 discoByteBox.Text = this.discoByte;
+
+                UpdateCmdByteBox("0D");
 
                 SendFrameIfNeeded();
             }
@@ -279,6 +308,8 @@ namespace PCRemote
                 string hexVal = System.Convert.ToString(val, 16).ToUpper();
                 this.colorByte = colorBox.Text = hexVal;
 
+                UpdateCmdByteBox("0F");
+
                 SendFrameIfNeeded();
             }
             catch (Exception ex)
@@ -292,10 +323,12 @@ namespace PCRemote
             try
             {
                 int val = System.Convert.ToInt32(e.NewValue);
-                val = CalcLight(val);
+                val = CalcLight(val, this.channel);
                 string hexVal = System.Convert.ToString(val, 16).ToUpper();
-                if(lightByteBox != null)
+                if (lightByteBox != null)
                     this.lightByte = lightByteBox.Text = hexVal;
+
+                UpdateCmdByteBox("0E");
 
                 SendFrameIfNeeded();
             }
@@ -345,60 +378,70 @@ namespace PCRemote
             {
                 Button buttSender = (Button)sender;
 
+                string newCmd = "00";
                 switch (buttSender.Name)
                 {
                     case "allOnButton":
-                        this.cmdByte = "01";
+                        newCmd = "01";
+                        this.channel = CHANNELS.ALL;
                         break;
                     case "allOffButton":
-                        this.cmdByte = "02";
+                        newCmd = "02";
+                        this.channel = CHANNELS.ALL;
                         break;
                     case "changeColorButton":
-                        this.cmdByte = "0F";
+                        newCmd = "0F";
                         break;
                     case "changeLightButton":
-                        this.cmdByte = "0E";
+                        newCmd = "0E";
                         break;
                     case "speedMinusButton":
-                        this.cmdByte = "0C";
+                        newCmd = "0C";
                         break;
                     case "discoModeButton":
-                        this.cmdByte = "0D";
+                        newCmd = "0D";
                         break;
                     case "speedPlusButton":
-                        this.cmdByte = "0B";
+                        newCmd = "0B";
                         break;
                     case "ch1OnButton":
-                        this.cmdByte = "03";
+                        newCmd = "03";
+                        this.channel = CHANNELS.CH1;
                         break;
                     case "ch1OffButton":
-                        this.cmdByte = "04";
+                        newCmd = "04";
+                        this.channel = CHANNELS.CH1;
                         break;
                     case "ch2OnButton":
-                        this.cmdByte = "05";
+                        newCmd = "05";
+                        this.channel = CHANNELS.CH2;
                         break;
                     case "ch2OffButton":
-                        this.cmdByte = "06";
+                        newCmd = "06";
+                        this.channel = CHANNELS.CH2;
                         break;
                     case "ch3OnButton":
-                        this.cmdByte = "07";
+                        newCmd = "07";
+                        this.channel = CHANNELS.CH3;
                         break;
                     case "ch3OffButton":
-                        this.cmdByte = "08";
+                        newCmd = "08";
+                        this.channel = CHANNELS.CH3;
                         break;
                     case "ch4OnButton":
-                        this.cmdByte = "09";
+                        newCmd = "09";
+                        this.channel = CHANNELS.CH4;
                         break;
                     case "ch4OffButton":
-                        this.cmdByte = "0A";
+                        newCmd = "0A";
+                        this.channel = CHANNELS.CH4;
                         break;
                     default:
                         MessageBox.Show("Unknown button");
                         return;
                 }
-                if(holdButton)
-                    this.cmdByte = "1" + this.cmdByte.Substring(1, 1);
-                cmdByteBox.Text = this.cmdByte;
+                UpdateCmdByteBox(newCmd);
+                UpdateLightVal();
 
                 SendFrameIfNeeded(true);
             }
