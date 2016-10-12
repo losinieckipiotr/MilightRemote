@@ -1,31 +1,22 @@
-#include <stdexcept>
-#include <cmath>
+#include <cstdio>
 
-#include <iostream>
-
-#include "MiLightPilot.h"
-
+#include "MilightPilot.h"
 
 using namespace device;
 using namespace milight;
 using namespace std;
 
-#ifndef SYMULATOR
 MiLightPilot::MiLightPilot()
-	:	RF24_(RPI_V2_GPIO_P1_22, RPI_V2_GPIO_P1_24, BCM2835_SPI_SPEED_1MHZ),
+    :	channelID_(CH_ID::ALL),
+        holdButton_(false),
+        resends_(defaultResends),
+        sequenceLength_(defaultSequenceLength),
+        RF24_(RPI_V2_GPIO_P1_22, RPI_V2_GPIO_P1_24, BCM2835_SPI_SPEED_1MHZ),
 		PL1167_nRF24_(RF24_),
 		radio_(PL1167_nRF24_)
 {
 
 }
-#else
-void delay(unsigned int) { }
-
-MiLightPilot::MiLightPilot()
-{
-
-}
-#endif
 
 MiLightPilot::~MiLightPilot()
 {
@@ -37,9 +28,9 @@ void MiLightPilot::Init()
     radio_.begin();
 }
 
-void MiLightPilot::SendCmd(CMDS cmd, bool hold, const unsigned int resends, unsigned int seqLength, unsigned int delayVal)
+void MiLightPilot::SendCmd(CMDS command)
 {
-    switch (cmd)
+    switch (command)
     {
     case CMDS::ALL_ON:
     case CMDS::ALL_OFF:
@@ -54,191 +45,161 @@ void MiLightPilot::SendCmd(CMDS cmd, bool hold, const unsigned int resends, unsi
     case CMDS::DISCO_SPEED_PLUS:
     case CMDS::DISCO_SPEED_MINUS:
     case CMDS::DISCO:
-        frame_[static_cast<uint8_t>(BYTE_POS::CMD)] = (hold) ? static_cast<uint8_t>(HOLD::HOLD) : 0x00;
-    case ::CMDS::SET_LIGHT:
-    case ::CMDS::SET_COLOR:
-        frame_[static_cast<uint8_t>(BYTE_POS::CMD)] += static_cast<uint8_t>(cmd);
+        frame_[BYTE_POS::CMD] = (holdButton_) ? HOLD : 0x00;
+    case ::CMDS::SET_LIGHT://int this two cases remote seems not to send
+    case ::CMDS::SET_COLOR://the hold bit
+        frame_[BYTE_POS::CMD] += byte_cast(command);//in all valid cases set command
         break;
     default:
         return;
     }
 
-    SendFromBuf(resends, seqLength, delayVal);
+    SendFromBuf();
 }
 
-void MiLightPilot::SendFromBuf(const unsigned int resends, unsigned int seqLength, unsigned int delayVal)
+void MiLightPilot::SendFromBuf()
 {
-    for (unsigned int i = 0; i < seqLength; ++i)
+    for (unsigned int i = 0; i < sequenceLength_; ++i)
     {
-        /*//print frame
-        for (int k = 0; k < 7; ++k)
+        //print frame
+        #ifdef PILOT_DEBUG
+        for (int k = 0; k < FRAME_LENGTH; ++k)
         {
             printf("%02X ", frame_[k]);
         }
-        printf("\n");*/
+        printf("\n");
+        #endif // PILOT_DEBUG
 
         //copy frame to radio buffer and send
-        radio_.write(frame_, 7);
-
-        if (delayVal) delay(delayVal);
-
+        radio_.write(frame_.data(), FRAME_LENGTH);
         //resend frame
-        for (unsigned int j = 0; j < resends; ++j)
+        for (unsigned int j = 0; j < resends_; ++j)
         {
             radio_.resend();
-            if (delayVal) delay(delayVal);
         }
-
         //increment seq
-        ++frame_[6];
+        ++frame_[BYTE_POS::SEQ];
     }
 }
 
-void MiLightPilot::SendFrame(vector<uint8_t> &frame, unsigned int resends, unsigned int seqLength, unsigned int delayVal)
+void MiLightPilot::SendFrame(const vector<uint8_t>& frame)
 {
-    if (frame.size() == 7 && seqLength > 0)
+    if (sequenceLength_ != 0)
     {
-        memcpy(frame_, frame.data(), 7);
-        SendFromBuf(resends, seqLength, delayVal);
+        SetFrame(frame);
+        SendFromBuf();
     }
 }
 
-void MiLightPilot::SendALL_ON(bool hold, unsigned int resends , unsigned int seqLength, unsigned int delayVal)
+void MiLightPilot::SendALL_ON()
 {
-    SetCmd(CMDS::ALL_ON, hold);
-    SendFromBuf(resends, seqLength, delayVal);
+    SetCmd(CMDS::ALL_ON);
+    SetChannelID(CH_ID::ALL);
+    SendFromBuf();
 }
 
-void MiLightPilot::SendALL_OFF(bool hold, unsigned int resends, unsigned int seqLength, unsigned int delayVal)
+void MiLightPilot::SendALL_OFF()
 {
-    SetCmd(CMDS::ALL_OFF, hold);
-    SendFromBuf(resends, seqLength, delayVal);
+    SetCmd(CMDS::ALL_OFF);
+    SetChannelID(CH_ID::ALL);
+    SendFromBuf();
 }
 
-void MiLightPilot::SendCH1_ON(bool hold, unsigned int resends, unsigned int seqLength, unsigned int delayVal)
+void MiLightPilot::SendCH1_ON()
 {
-    SetCmd(CMDS::CH1_ON, hold);
-    SendFromBuf(resends, seqLength, delayVal);
+    SetCmd(CMDS::CH1_ON);
+    SetChannelID(CH_ID::CH1);
+    SendFromBuf();
 }
 
-void MiLightPilot::SendCH1_OFF(bool hold, unsigned int resends, unsigned int seqLength, unsigned int delayVal)
+void MiLightPilot::SendCH1_OFF()
 {
-    SetCmd(CMDS::CH1_OFF, hold);
-    SendFromBuf(resends, seqLength, delayVal);
+    SetCmd(CMDS::CH1_OFF);
+    SetChannelID(CH_ID::CH1);
+    SendFromBuf();
 }
 
-void MiLightPilot::SendCH2_ON(bool hold, unsigned int resends, unsigned int seqLength, unsigned int delayVal)
+void MiLightPilot::SendCH2_ON()
 {
-    SetCmd(CMDS::CH2_ON, hold);
-    SendFromBuf(resends, seqLength, delayVal);
+    SetCmd(CMDS::CH2_ON);
+    SetChannelID(CH_ID::CH2);
+    SendFromBuf();
 }
 
-void MiLightPilot::SendCH2_OFF(bool hold, unsigned int resends, unsigned int seqLength, unsigned int delayVal)
+void MiLightPilot::SendCH2_OFF()
 {
-    SetCmd(CMDS::CH2_OFF, hold);
-    SendFromBuf(resends, seqLength, delayVal);
+    SetCmd(CMDS::CH2_OFF);
+    SetChannelID(CH_ID::CH2);
+    SendFromBuf();
 }
 
-void MiLightPilot::SendCH3_ON(bool hold, unsigned int resends, unsigned int seqLength, unsigned int delayVal)
+void MiLightPilot::SendCH3_ON()
 {
-    SetCmd(CMDS::CH3_ON, hold);
-    SendFromBuf(resends, seqLength, delayVal);
+    SetCmd(CMDS::CH3_ON);
+    SetChannelID(CH_ID::CH3);
+    SendFromBuf();
 }
 
-void MiLightPilot::SendCH3_OFF(bool hold, unsigned int resends, unsigned int seqLength, unsigned int delayVal)
+void MiLightPilot::SendCH3_OFF()
 {
-    SetCmd(CMDS::CH3_OFF, hold);
-    SendFromBuf(resends, seqLength, delayVal);
+    SetCmd(CMDS::CH3_OFF);
+    SetChannelID(CH_ID::CH3);
+    SendFromBuf();
 }
 
-void MiLightPilot::SendCH4_ON(bool hold, unsigned int resends, unsigned int seqLength, unsigned int delayVal)
+void MiLightPilot::SendCH4_ON()
 {
-    SetCmd(CMDS::CH4_ON, hold);
-    SendFromBuf(resends, seqLength, delayVal);
+    SetCmd(CMDS::CH4_ON);
+    SetChannelID(CH_ID::CH4);
+    SendFromBuf();
 }
 
-void MiLightPilot::SendCH4_OFF(bool hold, unsigned int resends, unsigned int seqLength, unsigned int delayVal)
+void MiLightPilot::SendCH4_OFF()
 {
-    SetCmd(CMDS::CH4_OFF, hold);
-    SendFromBuf(resends, seqLength, delayVal);
+    SetCmd(CMDS::CH4_OFF);
+    SetChannelID(CH_ID::CH4);
+    SendFromBuf();
 }
-void MiLightPilot::SendDISCO_SPEED_PLUS(bool hold, unsigned int resends, unsigned int seqLength, unsigned int delayVal)
+void MiLightPilot::SendDISCO_SPEED_PLUS()
 {
-    SetCmd(CMDS::DISCO_SPEED_PLUS, hold);
-    SendFromBuf(resends, seqLength, delayVal);
+    SetCmd(CMDS::DISCO_SPEED_PLUS);
+    SendFromBuf();
 }
 
-void MiLightPilot::SendDISCO_SPEED_MINUS(bool hold, unsigned int resends, unsigned int seqLength, unsigned int delayVal)
+void MiLightPilot::SendDISCO_SPEED_MINUS()
 {
-    SetCmd(CMDS::DISCO_SPEED_MINUS, hold);
-    SendFromBuf(resends, seqLength, delayVal);
+    SetCmd(CMDS::DISCO_SPEED_MINUS);
+    SendFromBuf();
 }
-void device::milight::MiLightPilot::SendDISCO(DISCO_MODES mode, bool hold , unsigned int resends, unsigned int seqLength, unsigned int delayVal)
+void device::milight::MiLightPilot::SendDISCO(DISCO_MODES mode)
 {
 	SetDisco(mode);
-	SetCmd(CMDS::DISCO, hold);
-	SendFromBuf(resends, seqLength, delayVal);
+	SetCmd(CMDS::DISCO);
+	SendFromBuf();
 }
 
-void MiLightPilot::SendSET_LIGHT(uint8_t light, unsigned int resends, unsigned int seqLength, unsigned int delayVal)
+void MiLightPilot::SendSET_LIGHT(light_val light)
 {
-    SetLight(ClosestLightVal(light));
-    SetCmd(CMDS::SET_LIGHT, false);
-    SendFromBuf(resends, seqLength, delayVal);
+    bool hold = holdButton_;
+    SetHoldButton(false);
+    SetLight(light);
+    SetCmd(CMDS::SET_LIGHT);
+    SendFromBuf();
+    SetHoldButton(hold);
 }
 
-void MiLightPilot::SendSET_LIGHT(LIGHT_VALS light, unsigned int resends, unsigned int seqLength, unsigned int delayVal)
+void MiLightPilot::SendSET_COLOR(uint8_t color)
 {
-	SetLight(light);
-	SetCmd(CMDS::SET_LIGHT, false);
-	SendFromBuf(resends, seqLength, delayVal);
-}
-
-void MiLightPilot::SendSET_COLOR(uint8_t color,const unsigned int resends, unsigned int seqLength, unsigned int delayVal)
-{
+    bool hold = holdButton_;
+    SetHoldButton(false);
     SetColor(color);
-    SetCmd(CMDS::SET_COLOR, false);
-    SendFromBuf(resends, seqLength, delayVal);
+    SetCmd(CMDS::SET_COLOR);
+    SendFromBuf();
+    SetHoldButton(hold);
 }
 
-void MiLightPilot::SendSET_COLOR(COLORS color, unsigned int resends, unsigned int seqLength, unsigned int delayVal)
+void MiLightPilot::SendSET_COLOR(COLORS color)
 {
-	SetColor(color);
+	SendSET_COLOR(byte_cast(color));
 }
 
-uint8_t MiLightPilot::GetLightVal(unsigned int lightInPerc)
-{
-    if (lightInPerc >= 100)
-        return static_cast<uint8_t>(LIGHT_VALS::LIGHT_MAX);
-    else if(lightInPerc == 0)
-        return static_cast<uint8_t>(LIGHT_VALS::LIGHT_MIN);
-
-    uint8_t t = static_cast<uint8_t>(round(lightInPerc / 4.0f));
-    uint8_t v = 0xFF - 0x7E - t * 8;
-    if(v < 0)
-        v = 0xFF + 0x82 - t * 8;
-    return v;
-}
-
-uint8_t MiLightPilot::ClosestLightVal(uint8_t val)
-{
-	if ((val >= 0x0 && val <= 0x81) || (val >= 0xB9 && val <= 0xFF))
-	{
-		//hight byte
-		uint8_t temp1 = val >> 4;
-		temp1 = temp1 << 4;
-		//low byte
-		uint8_t temp2 = val << 4;
-		temp2 = temp2 >> 4;
-		temp2 = (temp2 > 5) ? 0x09 : 0x01;
-		return temp1 | temp2;
-	}
-	else if (val <= 0x9D)
-	{
-		return static_cast<uint8_t>(0x81);
-	}
-	else
-	{
-		return static_cast<uint8_t>(0xB9);
-	}
-}

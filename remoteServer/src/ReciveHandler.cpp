@@ -79,14 +79,14 @@ void ReciveHandler::DecodeJSONs()
         pt::read_json(jsonStr, tree);
 
         vector<string> bytesStr;
-        bytesStr.reserve(7);
+        bytesStr.reserve(device::milight::FRAME_LENGTH);
         for(const auto& byte : tree.get_child("frame"))
         {
             bytesStr.push_back(byte.second.data());
         }
 
         vector<uint8_t> bytes;
-        bytes.reserve(7);
+        bytes.reserve(device::milight::FRAME_LENGTH);
         for(const auto& byte : bytesStr)
         {
             auto num = stoi(byte, nullptr, 16);
@@ -107,10 +107,14 @@ void ReciveHandler::SendFrames()
 {
     cout << "SendFrames(), commands_.size: " << commands_.size() << endl;
 
-    //unsigned int i = 0;
-    for(auto& cmd : commands_)
+    device::milight::send_params params;
+    for(const auto& cmd : commands_)
     {
-        pilot_.SendFrame(cmd.bytes, cmd.resends, cmd.seqLength, 0);
+        params.resends = cmd.resends;
+        params.sequenceLength = cmd.sequenceLength;
+
+        pilot_.SetSendParams(params);
+        pilot_.SendFrame(cmd.bytes);
 
         //cout << "cmd send: " << i++ << endl;
     }

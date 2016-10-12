@@ -6,7 +6,7 @@
 #include <vector>
 #include <mutex>
 
-#include "milight/MiLightPilot.h"
+#include "milight/MilightPilot.h"
 
 class MiLightCommand
 {
@@ -14,14 +14,14 @@ class MiLightCommand
         MiLightCommand(
             std::vector<uint8_t>&& bytes,
             unsigned int resends,
-            unsigned int seqLength)
+            unsigned int sequenceLength)
             :   bytes(std::move(bytes)),
                 resends(resends),
-                seqLength(seqLength) { }
+                sequenceLength(sequenceLength) { }
 
     std::vector<uint8_t> bytes;
     unsigned int resends;
-    unsigned int seqLength;
+    unsigned int sequenceLength;
 };
 
 class ReciveHandler

@@ -33,7 +33,7 @@ void TcpServer::Shutdown()
 {
     socket_.close();
     service_.stop();
-    serverTh_.join();
+    serverTh_.detach();
 }
 
 void TcpServer::Accept()

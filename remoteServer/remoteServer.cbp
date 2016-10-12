@@ -40,9 +40,9 @@
 		<Unit filename="src/main.cpp" />
 		<Unit filename="src/milight/AbstractPL1167.h" />
 		<Unit filename="src/milight/MiLightPilot.cpp" />
-		<Unit filename="src/milight/MiLightPilot.h" />
 		<Unit filename="src/milight/MiLightRadio.cpp" />
 		<Unit filename="src/milight/MiLightRadio.h" />
+		<Unit filename="src/milight/MilightPilot.h" />
 		<Unit filename="src/milight/PL1167_nRF24.cpp" />
 		<Unit filename="src/milight/PL1167_nRF24.h" />
 		<Extensions>
